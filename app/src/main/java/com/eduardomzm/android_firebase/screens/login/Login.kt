@@ -28,17 +28,26 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.eduardomzm.android_firebase.navigation.TrackScreen
 import com.eduardomzm.android_firebase.ui.theme.Purple40
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.logEvent
 
 @Composable
-fun Login(navigateToHome: () -> Unit) {
+fun Login(analytics: FirebaseAnalytics, navigateToHome: () -> Unit) {
+    TrackScreen(name = "LoginScreen", analytics = analytics)
+
     Box(modifier = Modifier.fillMaxSize()) {
         ClickableText(
             text = AnnotatedString("¿No tienes una cuenta? Regístrate"),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(50.dp),
-            onClick = {},
+            onClick = {
+                analytics.logEvent("click_registro") {
+                    param("descripcion", "No tiene cuenta, quiere registrarse")
+                }
+            },
             style = TextStyle(
                 fontSize = 14.sp,
                 fontFamily = FontFamily.Default,
@@ -79,7 +88,12 @@ fun Login(navigateToHome: () -> Unit) {
         Spacer(modifier = Modifier.height(30.dp))
         Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
             Button(
-                onClick = { navigateToHome() },
+                onClick = {
+                    analytics.logEvent("click_iniciar_sesion") {
+                        param("metodo", "correo")
+                    }
+                    navigateToHome()
+                },
                 shape = RoundedCornerShape(50.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,7 +106,11 @@ fun Login(navigateToHome: () -> Unit) {
         Spacer(modifier = Modifier.height(40.dp))
         ClickableText(
             text = AnnotatedString("¿Olvidaste tu contraseña?"),
-            onClick = {},
+            onClick = {
+                analytics.logEvent("click_olvido_contrasena") {
+                    param("descripcion", "Olvidó su contraseña")
+                }
+            },
             style = TextStyle(
                 fontSize = 14.sp,
                 fontFamily = FontFamily.Default,

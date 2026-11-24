@@ -8,13 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
+import com.eduardomzm.android_firebase.navigation.TrackScreen
+import com.google.firebase.analytics.FirebaseAnalytics
 
 @Composable
-fun Home() {
-    Column (
+fun Home(analytics: FirebaseAnalytics) {
+    TrackScreen(name = "HomeScreen", analytics = analytics)
+
+    Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally) {
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text("Inicio", fontSize = 40.sp)
     }
 }
