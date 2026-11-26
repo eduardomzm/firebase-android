@@ -1,5 +1,6 @@
 package com.eduardomzm.android_firebase.ui.screens.auth
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +31,12 @@ import androidx.navigation.NavController
 import com.eduardomzm.android_firebase.ui.navigation.Routes
 import com.eduardomzm.android_firebase.ui.theme.Purple40
 import com.eduardomzm.android_firebase.utils.AnalyticsManager
+import com.eduardomzm.android_firebase.utils.AuthManager
+import com.eduardomzm.android_firebase.utils.AuthRes
+import kotlinx.coroutines.launch
 
 @Composable
-fun ForgotPasswordScreen(analytics: AnalyticsManager, navigation: NavController) {
+fun ForgotPasswordScreen(analytics: AnalyticsManager, auth: AuthManager, navigation: NavController) {
     analytics.logScreenView(screenName = Routes.ForgotPassword.route)
 
     val context = LocalContext.current
@@ -42,7 +46,7 @@ fun ForgotPasswordScreen(analytics: AnalyticsManager, navigation: NavController)
 
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -60,7 +64,25 @@ fun ForgotPasswordScreen(analytics: AnalyticsManager, navigation: NavController)
         Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
             Button(
                 onClick = {
-
+                    scope.launch {
+                        when (val result = auth.resetPassword(email)) {
+                            is AuthRes.Success -> {
+                                analytics.logButtonClicked("Click: Recuperar contraseña")
+                                Toast.makeText(
+                                    context,
+                                    "Te enviamos un correo para restablecer tu contraseña",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                navigation.navigate(Routes.Login.route) {
+                                    popUpTo(Routes.ForgotPassword.route) { inclusive = true }
+                                }
+                            }
+                            is AuthRes.Error -> {
+                                analytics.logError("Error ResetPassword: ${result.errorMessage}")
+                                Toast.makeText(context, result.errorMessage, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
                 },
                 shape = RoundedCornerShape(50.dp),
                 modifier = Modifier

@@ -115,7 +115,9 @@ fun LoginScreen(analytics: AnalyticsManager, auth: AuthManager, navigation: NavC
         Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
             Button(
                 onClick = {
-
+                    scope.launch {
+                        emailPassSignIn(email, password, auth, analytics, context, navigation)
+                    }
                 },
                 shape = RoundedCornerShape(50.dp),
                 modifier = Modifier
@@ -167,6 +169,28 @@ fun LoginScreen(analytics: AnalyticsManager, auth: AuthManager, navigation: NavC
 }
 
 
+
+private suspend fun emailPassSignIn(
+    email: String,
+    password: String,
+    auth: AuthManager,
+    analytics: AnalyticsManager,
+    context: Context,
+    navigation: NavController
+) {
+    when (val result = auth.signInWithEmailAndPassword(email, password)) {
+        is AuthRes.Success -> {
+            analytics.logButtonClicked("Click: Iniciar sesión con correo")
+            navigation.navigate(Routes.Home.route) {
+                popUpTo(Routes.Login.route) { inclusive = true }
+            }
+        }
+        is AuthRes.Error -> {
+            analytics.logError("Error SignIn Email: ${result.errorMessage}")
+            Toast.makeText(context, result.errorMessage, Toast.LENGTH_LONG).show()
+        }
+    }
+}
 
 private suspend fun incognitoSignIn(
     auth: AuthManager,
