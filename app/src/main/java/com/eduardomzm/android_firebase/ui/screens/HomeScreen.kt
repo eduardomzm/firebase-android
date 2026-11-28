@@ -59,6 +59,7 @@ import com.eduardomzm.android_firebase.ui.screens.db.ContactsScreen
 import com.eduardomzm.android_firebase.ui.screens.db.NotesScreen
 import com.eduardomzm.android_firebase.utils.AnalyticsManager
 import com.eduardomzm.android_firebase.utils.AuthManager
+import com.eduardomzm.android_firebase.utils.RealtimeManager
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -157,7 +158,7 @@ fun HomeScreen(analytics: AnalyticsManager, auth: AuthManager, navigation: NavCo
                     showDialog = false
                 }, onDismiss = { showDialog = false })
             }
-            BottomNavGraph(navController = navController)
+            BottomNavGraph(navController = navController, authManager = auth)
         }
     }
 }
@@ -224,10 +225,11 @@ fun RowScope.AddItem(screens: BottomNavScreen, currentDestination: NavDestinatio
 }
 
 @Composable
-fun BottomNavGraph(navController: NavHostController) {
+fun BottomNavGraph(navController: NavHostController, authManager: AuthManager) {
+    val realtime = remember { RealtimeManager(authManager) }
     NavHost(navController = navController, startDestination = BottomNavScreen.Contact.route) {
         composable(route = BottomNavScreen.Contact.route) {
-            ContactsScreen()
+            ContactsScreen(realtime = realtime, authManager = authManager)
         }
         composable(route = BottomNavScreen.Note.route) {
             NotesScreen()
