@@ -58,6 +58,11 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
 
+    // Inicio de sesión con Google (Credential Manager)
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
     // Imágenes desde URL (foto de perfil) e íconos de Material
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.compose.material:material-icons-extended")

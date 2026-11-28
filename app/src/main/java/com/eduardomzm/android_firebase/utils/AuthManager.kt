@@ -1,11 +1,22 @@
 package com.eduardomzm.android_firebase.utils
 
+import android.content.Context
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
+import com.eduardomzm.android_firebase.R
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.tasks.await
 
@@ -20,8 +31,9 @@ sealed class AuthRes<out T> {
 /**
  * Concentra todas las operaciones de Firebase Authentication de la app.
  */
-class AuthManager {
+class AuthManager(private val context: Context) {
     private val auth: FirebaseAuth by lazy { Firebase.auth }
+    private val credentialManager by lazy { CredentialManager.create(context) }
 
     suspend fun signInAnonymously(): AuthRes<FirebaseUser> {
         return try {
@@ -62,6 +74,39 @@ class AuthManager {
         }
     }
 
+    /**
+     * Muestra el selector de cuentas de Google y con el token obtenido inicia sesión en Firebase.
+     * [activityContext] debe ser el contexto de la Activity (LocalContext en Compose).
+     */
+    suspend fun signInWithGoogle(activityContext: Context): AuthRes<FirebaseUser?> {
+        return try {
+            val googleOption = GetSignInWithGoogleOption
+                .Builder(context.getString(R.string.default_web_client_id))
+                .build()
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleOption)
+                .build()
+
+            val credential = credentialManager.getCredential(activityContext, request).credential
+            if (credential is CustomCredential &&
+                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+            ) {
+                val idToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
+                val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+                val authResult = auth.signInWithCredential(firebaseCredential).await()
+                AuthRes.Success(authResult.user)
+            } else {
+                AuthRes.Error("Tipo de credencial no soportado")
+            }
+        } catch (e: GetCredentialCancellationException) {
+            AuthRes.Error("Inicio de sesión con Google cancelado")
+        } catch (e: NoCredentialException) {
+            AuthRes.Error("No hay cuentas de Google en este dispositivo")
+        } catch (e: Exception) {
+            AuthRes.Error(friendlyMessage(e, "Error al iniciar sesión con Google"))
+        }
+    }
+
     /** Traduce los errores de Firebase a mensajes en español para el usuario. */
     private fun friendlyMessage(e: Exception, default: String): String = when (e) {
         is FirebaseNetworkException -> "Sin conexión a internet"
@@ -78,8 +123,13 @@ class AuthManager {
         else -> e.message ?: default
     }
 
-    fun signOut() {
+    suspend fun signOut() {
         auth.signOut()
+        // Olvida la cuenta de Google elegida para que la próxima vez vuelva a preguntar
+        try {
+            credentialManager.clearCredentialState(ClearCredentialStateRequest())
+        } catch (_: Exception) {
+        }
     }
 
     fun getCurrentUser(): FirebaseUser? {

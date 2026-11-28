@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +59,7 @@ import com.eduardomzm.android_firebase.ui.screens.db.ContactsScreen
 import com.eduardomzm.android_firebase.ui.screens.db.NotesScreen
 import com.eduardomzm.android_firebase.utils.AnalyticsManager
 import com.eduardomzm.android_firebase.utils.AuthManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,12 +70,15 @@ fun HomeScreen(analytics: AnalyticsManager, auth: AuthManager, navigation: NavCo
     val navController = rememberNavController()
 
     var showDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val onLogoutConfirmed: () -> Unit = {
-        auth.signOut()
-        analytics.logButtonClicked("Click: Cerrar sesión")
-        navigation.navigate(Routes.Login.route) {
-            popUpTo(Routes.Home.route) { inclusive = true }
+        scope.launch {
+            auth.signOut()
+            analytics.logButtonClicked("Click: Cerrar sesión")
+            navigation.navigate(Routes.Login.route) {
+                popUpTo(Routes.Home.route) { inclusive = true }
+            }
         }
     }
 
@@ -85,12 +90,34 @@ fun HomeScreen(analytics: AnalyticsManager, auth: AuthManager, navigation: NavCo
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
-
+                        // Foto de perfil: la de Google si existe, si no una imagen por defecto
+                        if (user?.photoUrl != null) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(user.photoUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Foto de perfil",
+                                placeholder = painterResource(id = R.drawable.profile),
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .size(40.dp)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.profile),
+                                contentDescription = "Foto de perfil por defecto",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .size(40.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Bienvenidx",
+                                text = if (!user?.displayName.isNullOrBlank()) "Hola ${user?.displayName}" else "Bienvenidx",
                                 fontSize = 20.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis

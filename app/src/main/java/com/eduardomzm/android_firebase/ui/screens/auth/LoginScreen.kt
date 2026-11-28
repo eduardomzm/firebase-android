@@ -159,7 +159,9 @@ fun LoginScreen(analytics: AnalyticsManager, auth: AuthManager, navigation: NavC
         Spacer(modifier = Modifier.height(15.dp))
         SocialMediaButton(
             onClick = {
-
+                scope.launch {
+                    googleSignIn(auth, analytics, context, navigation)
+                }
             },
             text = "Continuar con Google",
             icon = R.drawable.ic_google,
@@ -187,6 +189,26 @@ private suspend fun emailPassSignIn(
         }
         is AuthRes.Error -> {
             analytics.logError("Error SignIn Email: ${result.errorMessage}")
+            Toast.makeText(context, result.errorMessage, Toast.LENGTH_LONG).show()
+        }
+    }
+}
+
+private suspend fun googleSignIn(
+    auth: AuthManager,
+    analytics: AnalyticsManager,
+    context: Context,
+    navigation: NavController
+) {
+    when (val result = auth.signInWithGoogle(context)) {
+        is AuthRes.Success -> {
+            analytics.logButtonClicked("Click: Continuar con Google")
+            navigation.navigate(Routes.Home.route) {
+                popUpTo(Routes.Login.route) { inclusive = true }
+            }
+        }
+        is AuthRes.Error -> {
+            analytics.logError("Error SignIn Google: ${result.errorMessage}")
             Toast.makeText(context, result.errorMessage, Toast.LENGTH_LONG).show()
         }
     }

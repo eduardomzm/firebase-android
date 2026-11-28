@@ -18,7 +18,7 @@ import com.eduardomzm.android_firebase.utils.AuthManager
 @Composable
 fun Navigation(context: Context, navController: NavHostController = rememberNavController()) {
     val analytics = remember { AnalyticsManager(context) }
-    val authManager = remember { AuthManager() }
+    val authManager = remember { AuthManager(context.applicationContext) }
 
     // Si ya hay una sesión abierta, la app arranca directamente en Home
     val startDestination = remember {
